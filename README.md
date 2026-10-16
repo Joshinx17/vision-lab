@@ -3,6 +3,23 @@
 A local computer-vision workspace integrating Vision-XE, Air Write, and static
 ASL alphabet classification behind one camera pipeline and interface.
 
+## Source projects
+
+Vision-Lab is a **unified integration** of three independent computer-vision
+projects. Their features are brought together in one website, with shared
+camera and resource management, while their original repositories remain
+available for reference:
+
+| Integrated project | Original repository |
+|---|---|
+| Vision-XE face detection and expression analysis | [Joshinx17/Vision-XE](https://github.com/Joshinx17/Vision-XE) |
+| Sign Language recognition | [Joshinx17/sign-language-recognition](https://github.com/Joshinx17/sign-language-recognition) |
+| Air Write gesture-based drawing | [Joshinx17/air-write](https://github.com/Joshinx17/air-write) |
+
+This repository is the combined application and its integration work. The
+source projects have their own histories and requirements; see the links above
+to explore them individually.
+
 **Status (2026-10-17):** the unified website, resource catalog and model-profile
 workflow are implemented. Automated and browser checks are recorded in
 [verification](docs/verification.md). Full live-camera acceptance and real
