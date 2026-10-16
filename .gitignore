@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.venv/
+.runtime/
+.cache/
+__pycache__/
+*.pyc
+.env
+logs/
+data/
+models/*.h5
+models/*.keras
+models/*.tmp*
+# Preserved nested repositories are provenance, not application dependencies.
+Vision-XE/
+air-write/
+sign-language-recognition/

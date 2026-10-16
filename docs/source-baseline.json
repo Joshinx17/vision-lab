@@ -1,0 +1,278 @@
+[
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": ".gitignore",
+    "sha256": "D50AB07E11FA4BF3B1C7C3312E1D7BAEAB56CCA756832CCF40476823AD2A38B7"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "README.md",
+    "sha256": "0592A648101D2FB3057915284295C2C8B4CB794AD2E7FCB87CAA2B67A6BBB0D3"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "eslint.config.js",
+    "sha256": "F6477B521C0D4C5AB0AC73D8CC8CE484795D23BECE7CBBD0CD2A9F4301337532"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/.gitignore",
+    "sha256": "FE718E7BABB14F3CBAD2D97F08889B9CE5215ED3FE0E43B2B8CFBFB3B9B844E8"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/README.md",
+    "sha256": "A460B4DC7E6392E76AA54D844C9261B8DB0ADB7F967BA8300526456F1DCF5FB4"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/eslint.config.js",
+    "sha256": "DA0CBF3213F2994741024E2AA5165D017E0345F389DCD2F8A0DB97FEE7289D1B"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/index.html",
+    "sha256": "39253475F261ABB7981F60F90DC200F1AC57E8A91684290686B9AF3D4979B7F9"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/package-lock.json",
+    "sha256": "9C7BF5C338350C7ECA672DA4C4A79354464662C7C1BFFC95680659432062A4F2"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/package.json",
+    "sha256": "DB8C83B720A42E3D2D6483D19C476355103758D63D47D8C5A31657935D437A4C"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/public/favicon.svg",
+    "sha256": "61BC9A161DE58248288E6905425D7180F0624C2865007B97D763FDAC12043A66"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/public/icons.svg",
+    "sha256": "B45FA506195CFCDEF406BA9F0C77B36DDC1A7C224040926EC70ABC2FDEA7B93A"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/public/models/face_expression/face_expression_model-shard1",
+    "sha256": "9A9840F2CF1F4C7EAB95F197512569345C00D2426754D4608B92AF30E0300F3D"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/public/models/face_expression/face_expression_model-weights_manifest.json",
+    "sha256": "960CBE959FE0328965DD18662D839F197DF6E27607DA4F726CD0C826E47FC936"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/public/models/face_landmark_68/face_landmark_68_model-shard1",
+    "sha256": "4611EF65C87D836D03D684B30EEC4D195D8B219FA1DD58FC58945831C6B9299B"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/public/models/face_landmark_68/face_landmark_68_model-weights_manifest.json",
+    "sha256": "D30F6CC341009EA4F8223876959289B96576FC54A2615F92DA9741AB9C5F0BBC"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/public/models/tiny_face_detector/tiny_face_detector_model-shard1",
+    "sha256": "B7503CE7DF31039B1C43316A9B865CAB6A70DD748CC602D3FA28B551503C3871"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/public/models/tiny_face_detector/tiny_face_detector_model-weights_manifest.json",
+    "sha256": "14C60659A31B6B7B1320077171B8F8ADCB24EF0E62DDE62CE603BCB49A1B49B5"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/App.css",
+    "sha256": "4313C0D242077FDAFFE75A694BA7D908CF322A5157B8839A24E74F16C0C648E9"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/App.jsx",
+    "sha256": "0ED9B20FF46E07C6D54E0ACB4E2EC3B589568C69464DF893B6CBF2F00EE60DFC"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/assets/hero.png",
+    "sha256": "72A860570EDDF1DD9988F26C7106C67BE286BC9F2FD3303C465CE87EDB1AE6CD"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/assets/react.svg",
+    "sha256": "35EF61ED53B323AE94A16A8EC659B3D0AF3880698791133F23B084085AB1C2E5"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/assets/vite.svg",
+    "sha256": "5BE21ACD42EB7B896E517F4E0F0F11EB5C5D9E54FBBCEBE9453F033008FCCA6F"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/components/LiveDashboard.jsx",
+    "sha256": "AC7900AB1A8A99A925506507BB44946F84C3A82C9E4ABC08D03E7C0EC4879DFE"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/components/SplashScreen.jsx",
+    "sha256": "CAF1B4796CF43843D6BA92AABDA84DE4C8D852AC0AB67DA6A834EFD40053AE1D"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/components/WebcamFeed.jsx",
+    "sha256": "EF054BC08EEFB7FF03D49718663A9729D1160B41CD0049EBA463153C7686033D"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/index.css",
+    "sha256": "9F5746DD6E7B1A587083B75D059E19B5279E228197EA50F7D1DEB7EDB3FA045C"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/main.jsx",
+    "sha256": "BE08BA463AB9446386158E509BEE2226AF1DFA1FFBC92399B4BD135B1891F1AD"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/src/pages/ExamPage.jsx",
+    "sha256": "97DB94D9F3CC9B3196EE27510B7D2EF201BFA1C6287D41597EE32767350046F7"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "frontend/vite.config.js",
+    "sha256": "4D36DB3522A7B2DD10E0936E1004373C7EE65F10F7CD7920CD76410459C15A45"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "package-lock.json",
+    "sha256": "ACCE6314710781F79AEF0976787C1509ACBE84922E27C75478E02E7284F6D34B"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "package.json",
+    "sha256": "10E974B48B9F30142D89723230F887B759A1F140D666256167D7FA4624EC1618"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "server.js",
+    "sha256": "7C038D8B119D94B4555CAE0A8AAB500B674A35D2615F38F6CDA61967D1A2DF71"
+  },
+  {
+    "project": "Vision-XE",
+    "revision": "8b8cd2a961e947f3622d47725ea2cf2e57982ff4",
+    "file": "socketConnection.js",
+    "sha256": "8F8E35F819407F26409F09A7C5EE670037AD28FE1506B9B13739024284048408"
+  },
+  {
+    "project": "air-write",
+    "revision": "18d14c0a8405cf7e8b6acce9b9aa29b50bf5e202",
+    "file": "README.md",
+    "sha256": "4C27E256122BDA335E7A239539420DAE88CFD96773C50CAEB25450F9BBA775AF"
+  },
+  {
+    "project": "air-write",
+    "revision": "18d14c0a8405cf7e8b6acce9b9aa29b50bf5e202",
+    "file": "index.html",
+    "sha256": "FAB806FC055F4AC907740F96879BEDD2B8E11FF24DE9FF924EDC060A7D4C5A6D"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": ".gitignore",
+    "sha256": "79F79BBDADC23131836CA77C5467241625B1323832B3B96F750D3E48E7784817"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "README.md",
+    "sha256": "1F85801D6E3DA5A3D4F7AFD030E7D3CE3228C93938DF0888BBE31A48CF4A04DD"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "app.py",
+    "sha256": "4E9DA43FF058BDBCF1006FAA8CF4E0721BAC069B1D66E70AD2CB4B215C4514A6"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "create_dataset.py",
+    "sha256": "4CA7B51F39697A0D34C06ACB799DAC731F64E76EC7FF75C31F03D1E96723EBC8"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "requirements.txt",
+    "sha256": "BA32660C7778717D5F00E1369C674A01ECB21FBD3EFA11706C50A11C4ED6F397"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "run_recognition.py",
+    "sha256": "72E5B30F3417D5649F02108C734B4EF2E9D55D5132ED2FD0BE13B889CCED8CCA"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "src/__init__.py",
+    "sha256": "7A03A04121CFEFF5B73D4E1A18997C32A3D9056660C579F39810E9690B2DC58A"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "src/config.py",
+    "sha256": "D86C09E8420C0FC6165F654CD28F480554F1FCABE4FA8C711665FD0081046628"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "src/dataset.py",
+    "sha256": "59A6CFA7BDDE5384C741194F4438EE2E4C54979B0690773EC64476F6428493C9"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "src/detector.py",
+    "sha256": "4A239451AA193CF3450A8ECE5A21E12ADF34008E1862774245E061FE7D5C6EA6"
+  },
+  {
+    "project": "sign-language-recognition",
+    "revision": "bf6a5f50a812e184c8682baf9287fedfadb378f4",
+    "file": "train_model.py",
+    "sha256": "70C39CA25403020CAB9E80F550F4F0F5D166997187EAF475D69E76A3B632D378"
+  }
+]
