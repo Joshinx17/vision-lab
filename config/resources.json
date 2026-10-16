@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "active_sign_profile": "asl-original",
+  "sign_profiles": [
+    {
+      "id": "asl-original",
+      "name": "Original ASL CNN",
+      "adapter": "keras_image",
+      "path": "models/sign_language_model.h5",
+      "labels_path": "models/sign-language/asl-labels.json",
+      "input": { "width": 64, "height": 64, "color": "BGR", "scale": 0.00392156862745098, "offset": 0 },
+      "hand_crop": { "enabled": true, "padding": 20, "no_hand": "full_frame" },
+      "description": "Original 26-class static alphabet contract. Trained weights were not supplied."
+    },
+    {
+      "id": "asl-candidate",
+      "name": "Candidate model — empty slot",
+      "adapter": "keras_image",
+      "path": "models/sign-language/candidate/model.keras",
+      "labels_path": "models/sign-language/asl-labels.json",
+      "input": { "width": 64, "height": 64, "color": "BGR", "scale": 0.00392156862745098, "offset": 0 },
+      "hand_crop": { "enabled": true, "padding": 20, "no_hand": "full_frame" },
+      "description": "Empty replacement slot. Set the real model's labels and input contract before selecting it."
+    }
+  ],
+  "vision_xe": {
+    "adapter": "face_api",
+    "models": {
+      "tiny_face_detector": "/models/tiny_face_detector",
+      "face_landmark_68": "/models/face_landmark_68",
+      "face_expression": "/models/face_expression"
+    }
+  },
+  "air_write": {
+    "adapter": "mediapipe_hands",
+    "asset_base": "/mediapipe",
+    "options": { "maxNumHands": 2, "modelComplexity": 1, "minDetectionConfidence": 0.7, "minTrackingConfidence": 0.6 }
+  },
+  "reference_image": "/asl_reference.png"
+}

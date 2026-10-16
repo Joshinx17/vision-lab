@@ -39,6 +39,13 @@ explicit partial-runtime option, not verification of all three modules.
 
 ## Configuration
 
+Prefer config/resources.json for active sign profile, per-model labels/input
+contracts, browser face/hand assets and the reference chart. Use the website's
+Models & resources panel to inspect missing resources and select/apply profiles.
+UI selection lasts for the server process; active_sign_profile sets its next
+startup default. Missing models do not prevent startup or browser-only modules.
+VISION_MODEL is an optional legacy override, not the recommended model catalog.
+
 `.env`: VISION_PORT (1024–65535), VISION_MODEL (repository-relative .h5/.keras),
 VISION_LOG_LEVEL (DEBUG/INFO/WARNING/ERROR), optional VISION_PYTHON (executable
 inside repository). Default: .venv interpreter if present, otherwise `python`.

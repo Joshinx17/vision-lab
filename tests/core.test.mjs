@@ -45,6 +45,18 @@ test('partial initialization releases module resources', async () => {
   await assert.rejects(f.pipeline.start({ initialize: async () => { throw Error('model missing'); }, dispose: async () => disposed++ }, validateConfig({})), /model missing/);
   assert.equal(disposed, 1); assert.equal(f.pipeline.module, null);
 });
+test('restart waits for an already-running asynchronous disposal', async () => {
+  const f = fixture(); let release, initialized = false;
+  await f.pipeline.start({ id: 'old', initialize: async () => {}, dispose: () => new Promise(resolve => { release = resolve; }) }, validateConfig({}));
+  const stopping = f.pipeline.stop();
+  await Promise.resolve(); await Promise.resolve();
+  const starting = f.pipeline.start({ id: 'new', initialize: async () => { initialized = true; } }, validateConfig({}));
+  await Promise.resolve(); await Promise.resolve();
+  assert.equal(initialized, false);
+  release(); await stopping; await starting;
+  assert.equal(initialized, true);
+  await f.pipeline.stop();
+});
 test('switching through three modules never renders old state', async () => {
   const f = fixture(), events = [];
   for (const id of ['vision_xe', 'air_write', 'sign_language', 'vision_xe']) {

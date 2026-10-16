@@ -25,15 +25,19 @@ from .config import IMG_SIZE, NUM_CLASSES, MODEL_PATH, LETTERS, BATCH_SIZE, EPOC
 from .dataset import preprocess_image, detect_and_crop_hand
 
 class SignLanguageDetector:
-    def __init__(self, model_path=MODEL_PATH, static_image_mode=False):
-        self.letters = LETTERS
+    def __init__(self, model_path=MODEL_PATH, static_image_mode=False, *, input_size=(IMG_SIZE, IMG_SIZE), letters=None,
+                 color_order='BGR', scale=1 / 255, offset=0, crop_enabled=True, padding=20, no_hand='full_frame'):
+        self.letters = letters if letters is not None else LETTERS
+        self.input_size = input_size
+        self.color_order, self.scale, self.offset = color_order, scale, offset
+        self.crop_enabled, self.padding, self.no_hand = crop_enabled, padding, no_hand
         self.model_path = model_path
         self.model = None
-        self.has_mediapipe = HAS_MEDIAPIPE
+        self.has_mediapipe = HAS_MEDIAPIPE and crop_enabled
         self.hands = None
         
         # Initialize MediaPipe Hands if available
-        if HAS_MEDIAPIPE:
+        if HAS_MEDIAPIPE and crop_enabled:
             try:
                 self.mp_hands = mp_hands
                 self.hands = self.mp_hands.Hands(
@@ -163,15 +167,17 @@ class SignLanguageDetector:
         cropped_hand, bbox, landmarks = None, None, None
         
         # Detect and crop hand if MediaPipe is available
-        if self.has_mediapipe and self.hands is not None:
+        if self.crop_enabled and self.has_mediapipe and self.hands is not None:
             try:
-                cropped_hand, bbox, landmarks = detect_and_crop_hand(image, self.hands)
+                cropped_hand, bbox, landmarks = detect_and_crop_hand(image, self.hands, self.padding)
             except Exception as e:
                 LOG.info(f"Hand detection failed: {e}")
         
         # If hand detected, predict on hand crop, else fallback to full image
         target_img = cropped_hand if cropped_hand is not None else image
-        processed = preprocess_image(target_img)
+        if self.crop_enabled and cropped_hand is None and self.no_hand == 'skip':
+            return {"letter": None, "confidence": 0.0, "bbox": None, "landmarks": None, "cropped_hand": None}
+        processed = preprocess_image(target_img, self.input_size, self.color_order, self.scale, self.offset)
         
         if processed is None:
             return {"letter": "N/A", "confidence": 0.0, "bbox": None, "landmarks": None, "cropped_hand": None}
@@ -179,6 +185,8 @@ class SignLanguageDetector:
         # Reshape for single prediction batch
         input_data = np.expand_dims(processed, axis=0)
         prediction = self.model.predict(input_data, verbose=0)[0]
+        if prediction.shape != (len(self.letters),) or not np.all(np.isfinite(prediction)) or np.any(prediction < 0) or np.any(prediction > 1) or not np.isclose(prediction.sum(), 1, atol=.01):
+            raise ValueError('Model must return finite normalized class probabilities, not logits.')
         predicted_idx = np.argmax(prediction)
         confidence = float(prediction[predicted_idx] * 100)
         predicted_letter = self.letters[predicted_idx]
@@ -191,6 +199,13 @@ class SignLanguageDetector:
             "cropped_hand": cropped_hand
         }
         
+    def close(self):
+        if self.hands is not None:
+            self.hands.close()
+            self.hands = None
+        self.model = None
+        tf.keras.backend.clear_session()
+
     def draw_prediction(self, image, prediction_result):
         """Draw landmarks, bounding box, and prediction overlays on BGR image"""
         output_image = image.copy()

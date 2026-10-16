@@ -1,5 +1,11 @@
 # Model inventory
 
+Model profiles are now configured in config/resources.json and selected through
+the website's Models & resources panel. The main README documents the full
+schema, missing-resource behavior and adapter registration. The original
+contract below is the default, not a restriction on every future profile.
+models/sign-language/candidate is an intentionally empty replacement slot.
+
 ## Face models
 
 Copied byte-for-byte from the supplied Vision-XE frontend/public/models:

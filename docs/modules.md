@@ -17,6 +17,11 @@ Result: `detections` (box, detection confidence, expressions, head offset),
 `expressions`, `dominant`; when enabled, `warnings` and `terminated`.
 No object detection/tracking/pose functionality was present to integrate.
 
+Browser resource URLs/options now come from config/resources.json. Sign models
+can use declared size/color/normalization/label contracts via the keras_image
+adapter. The original pipeline below describes the default profile; the main
+README documents replacements, limitations and supported training contracts.
+
 ## Air Write
 
 MediaPipe Hands: complexity1, max two hands, detection .7, tracking .6; first

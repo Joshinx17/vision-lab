@@ -6,7 +6,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit, unquote
 
 from .config import ROOT, settings, local_path
-from .service import SignService
+from .service import SignService, ResourceBusy, validate_session
+from .resources import ResourceCatalog
 
 LOG = logging.getLogger(__name__)
 MAX_BODY = 4_100_000
@@ -38,6 +39,8 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == '/api/status':
             return self.json(200, self.server.service.status())
+        if path == '/api/resources':
+            return self.json(200, self.server.service.catalog.report(self.server.service))
         if path == '/api/health':
             return self.json(200, {'status': 'ok', 'application': 'Vision-Lab'})
         static = ROOT / 'frontend' / 'dist'
@@ -70,11 +73,12 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Expected JSON object.')
             service = self.server.service
             routes = {
-                '/api/sign/load': lambda: self.load_sign(),
-                '/api/sign/predict': lambda: service.predict(body),
-                '/api/sign/close': lambda: self.close_sign(),
+                '/api/sign/load': lambda: service.acquire(body.get('session')),
+                '/api/sign/predict': lambda: self.predict_sign(body),
+                '/api/sign/close': lambda: service.release(body.get('session')),
                 '/api/dataset/capture': lambda: service.capture(body),
                 '/api/train': lambda: service.start_training(body),
+                '/api/resources/select': lambda: service.select_profile(body.get('profile_id')),
             }
             route = routes.get(self.path)
             if not route:
@@ -82,6 +86,8 @@ class Handler(BaseHTTPRequestHandler):
             if service.job['state'] == 'running' and self.path != '/api/dataset/capture':
                 return self.json(409, {'error': 'Training is running. Wait for completion.'})
             return self.json(200, route())
+        except ResourceBusy as error:
+            self.json(409, {'error': str(error)})
         except (ValueError, TypeError) as error:
             LOG.warning('Request rejected: %s', error)
             self.json(400, {'error': str(error)})
@@ -92,14 +98,9 @@ class Handler(BaseHTTPRequestHandler):
             LOG.exception('Frame service failure')
             self.json(500, {'error': 'Processing failed. See logs/vision-lab.log.'})
 
-    def load_sign(self):
-        with self.server.service.lock:
-            self.server.service.load()
-        return {'loaded': True}
-
-    def close_sign(self):
-        self.server.service.close()
-        return {'closed': True}
+    def predict_sign(self, body):
+        validate_session(body.get('session'))
+        return self.server.service.predict(body)
 
 
 def main():
@@ -109,7 +110,8 @@ def main():
     from logging.handlers import RotatingFileHandler
     logging.basicConfig(level=config['log_level'], format='%(asctime)s %(levelname)s %(name)s %(message)s', handlers=[logging.StreamHandler(), RotatingFileHandler(logs / 'vision-lab.log', maxBytes=2_000_000, backupCount=2)])
     server = ThreadingHTTPServer(('127.0.0.1', config['port']), Handler)
-    server.service = SignService(config['model'])
+    import os
+    server.service = SignService(config['model'] if os.environ.get('VISION_MODEL') else None, ResourceCatalog())
     LOG.info('Vision-Lab ready at http://localhost:%s', config['port'])
     try:
         server.serve_forever()

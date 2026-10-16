@@ -11,6 +11,11 @@ data/
 models/*.h5
 models/*.keras
 models/*.tmp*
+models/**/*.h5
+models/**/*.keras
+models/**/*.tflite
+models/**/*.onnx
+models/**/*.pt
 # Preserved nested repositories are provenance, not application dependencies.
 Vision-XE/
 air-write/

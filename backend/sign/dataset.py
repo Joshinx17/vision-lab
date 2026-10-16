@@ -7,12 +7,17 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from .config import IMG_SIZE, BATCH_SIZE, NUM_CLASSES, DATASET_PATH
 
-def preprocess_image(image, target_size=(IMG_SIZE, IMG_SIZE)):
+def preprocess_image(image, target_size=(IMG_SIZE, IMG_SIZE), color_order='BGR', scale=1 / 255, offset=0):
     """Preprocess image: resize and normalize pixel values to [0, 1]"""
     if image is None or image.size == 0:
         return None
     image_resized = cv2.resize(image, target_size)
-    image_normalized = image_resized.astype(np.float32) / 255.0
+    if color_order == 'RGB':
+        image_resized = cv2.cvtColor(image_resized, cv2.COLOR_BGR2RGB)
+    if scale == 1 / 255 and offset == 0:
+        image_normalized = image_resized.astype(np.float32) / 255.0
+    else:
+        image_normalized = image_resized.astype(np.float32) * np.float32(scale) + np.float32(offset)
     return image_normalized
 
 def detect_and_crop_hand(image, hands, padding=20):

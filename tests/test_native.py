@@ -113,6 +113,38 @@ class NativeTests(unittest.TestCase):
             self.assertTrue(self.np.isfinite(history.history['loss'][0]))
             self.assertTrue(Path(detector.model_path).is_file())
 
+    def test_replacement_profile_changes_size_color_and_labels(self):
+        import cv2
+        from backend.resources import ResourceCatalog, original_profile
+        from backend.service import SignService
+        import json
+        with tempfile.TemporaryDirectory(dir=ROOT / '.cache') as folder:
+            folder = Path(folder)
+            path = folder / 'replacement.keras'
+            inputs = self.tf.keras.Input((80, 96, 3))
+            pool = self.tf.keras.layers.GlobalAveragePooling2D()(inputs)
+            output = self.tf.keras.layers.Dense(2, activation='softmax')(pool)
+            model = self.tf.keras.Model(inputs, output)
+            model.layers[-1].set_weights([self.np.array([[3., -3.], [0., 0.], [-3., 3.]], dtype=self.np.float32), self.np.zeros(2, dtype=self.np.float32)])
+            model.save(path)
+            profile = original_profile(str(path))
+            profile.update(id='replacement', name='Synthetic RGB replacement', labels=['red', 'blue'])
+            profile['input'].update(width=96, height=80, color='RGB')
+            profile['hand_crop']['enabled'] = False
+            catalog_data = ResourceCatalog().read()
+            catalog_data.update(active_sign_profile='replacement', sign_profiles=[profile])
+            catalog_path = folder / 'resources.json'
+            catalog_path.write_text(json.dumps(catalog_data), encoding='utf-8')
+            service = SignService(catalog=ResourceCatalog(catalog_path))
+            image = self.np.zeros((40, 40, 3), dtype=self.np.uint8)
+            image[:, :, 0] = 255
+            _, encoded = cv2.imencode('.png', image)
+            result = service.predict({'image': 'data:image/png;base64,' + base64.b64encode(encoded).decode()})
+            self.assertEqual(result['label'], 'blue')
+            self.assertEqual(result['profile_id'], 'replacement')
+            self.assertFalse(result['fallback'])
+            service.close()
+
 
 if __name__ == '__main__':
     unittest.main()

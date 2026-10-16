@@ -10,10 +10,22 @@ import uuid
 from pathlib import Path
 
 from .config import ROOT, local_path
+from .resources import ResourceCatalog, original_profile, original_training_supported, validate_profile
+from .model_adapters import load_adapter
 
 LOG = logging.getLogger(__name__)
 LETTERS = tuple(chr(i) for i in range(65, 91))
 MAX_IMAGE_BYTES = 3_000_000
+
+
+class ResourceBusy(ValueError):
+    pass
+
+
+def validate_session(session):
+    if not isinstance(session, str) or not 1 <= len(session) <= 128 or not all(c.isalnum() or c in '-_' for c in session):
+        raise ValueError('A valid browser session id is required.')
+    return session
 
 
 def image_bytes(value):
@@ -41,38 +53,91 @@ def train_options(body):
 
 
 class SignService:
-    def __init__(self, model_path):
-        self.model_path = local_path(model_path)
+    def __init__(self, model_path=None, catalog=None):
+        self.catalog = catalog or ResourceCatalog()
+        self.profile_error = None
+        if model_path is not None:
+            self.profile = validate_profile(original_profile(model_path))
+        else:
+            try:
+                catalog_data = self.catalog.read()
+                self.profile = self.catalog.profile(catalog_data['active_sign_profile'])
+            except (ValueError, KeyError, TypeError) as error:
+                self.profile = original_profile('models/sign_language_model.h5')
+                self.profile_error = str(error)
+        self.model_path = local_path(self.profile['path'])
         self.dataset = local_path('data/asl_dataset')
         self.detector = None
         self.lock = threading.RLock()
         self.job = {'state': 'idle', 'history': []}
+        self.owner = None
+        self.last_seen = 0
 
     def stats(self):
         return {letter: sum(1 for path in (self.dataset / letter).glob('*') if path.suffix.lower() in ('.jpg', '.jpeg', '.png')) for letter in LETTERS}
 
     def status(self):
         return {'model_exists': self.model_path.is_file(), 'model_loaded': self.detector is not None and self.detector.model is not None,
-                'dataset': self.stats(), 'training': self.job}
+                'dataset': self.stats(), 'training': self.job, 'profile': self.profile,
+                'training_supported': original_training_supported(self.profile)}
+
+    def select_profile(self, profile_id):
+        if self.job['state'] == 'running':
+            raise ValueError('Cannot switch models during training.')
+        # Validate before disposing the previous working configuration.
+        candidate = self.catalog.profile(profile_id)
+        with self.lock:
+            self.expire_lease()
+            if self.owner:
+                raise ResourceBusy('Sign recognition is active in another session. Stop that session before changing models.')
+            if self.job['state'] == 'running':
+                raise ValueError('Cannot switch models during training.')
+            self.close()
+            self.profile = candidate
+            self.profile_error = None
+            self.model_path = local_path(candidate['path'])
+        LOG.info('Selected sign model profile %s', profile_id)
+        return self.status()
+
+    def expire_lease(self):
+        if self.owner and time.monotonic() - self.last_seen > 60:
+            self.close()
+
+    def acquire(self, session):
+        validate_session(session)
+        if self.job['state'] == 'running':
+            raise ResourceBusy('Training is running. Wait for completion.')
+        with self.lock:
+            self.expire_lease()
+            if self.owner and self.owner != session:
+                raise ResourceBusy('Sign recognition is active in another browser session. Stop it first, or wait 60 seconds after it disconnects.')
+            self.load()
+            self.owner, self.last_seen = session, time.monotonic()
+        return {'loaded': True, 'profile_id': self.profile['id']}
+
+    def release(self, session):
+        validate_session(session)
+        with self.lock:
+            if self.owner and self.owner != session:
+                raise ResourceBusy('This browser does not own the active sign session.')
+            self.close()
+        return {'closed': True}
 
     def load(self, require_model=True):
+        if self.profile_error:
+            raise ValueError(self.profile_error + '. Fix the catalog and select a profile in the website.')
         if require_model and not self.model_path.is_file():
-            raise ValueError('Sign model missing. Add models/sign_language_model.h5 (or configure VISION_MODEL). No trained model was supplied.')
+            raise ValueError(f'Sign model missing: {self.profile["path"]}. Add the trained model and matching labels/input contract, then refresh resources.')
         if self.detector is None:
             try:
-                from .sign.detector import SignLanguageDetector
-                detector = SignLanguageDetector(str(self.model_path))
+                if require_model:
+                    detector = load_adapter(self.profile)
+                else:
+                    from .sign.detector import SignLanguageDetector
+                    detector = SignLanguageDetector(str(self.model_path))
             except ImportError as error:
                 raise ValueError('Sign dependencies unavailable. Install requirements.txt in a Python 3.11/3.12 environment.') from error
             self.detector = detector
-        if require_model:
-            model = self.detector.model
-            if model is None:
-                self.close()
-                raise ValueError('Unable to load sign model. See logs/vision-lab.log.')
-            if tuple(model.input_shape[1:]) != (64, 64, 3) or tuple(model.output_shape[1:]) != (26,):
-                self.close()
-                raise ValueError('Model must accept BGR (64,64,3) and return 26 A–Z probabilities.')
         return self.detector
 
     @staticmethod
@@ -97,6 +162,12 @@ class SignService:
         if type(threshold) not in (int, float) or not math.isfinite(threshold) or not 0 <= threshold <= 1:
             raise ValueError('Threshold must be between 0 and 1.')
         with self.lock:
+            session = body.get('session')
+            if self.owner and self.owner != session:
+                raise ResourceBusy('Another browser owns sign recognition. Start your own session after it stops.')
+            if session is not None and self.owner is None:
+                raise ValueError('Sign session expired. Start recognition again.')
+            self.last_seen = time.monotonic()
             detector = self.load()
             frame = self.decode(body.get('image'))
             start = time.perf_counter()
@@ -106,8 +177,12 @@ class SignService:
                 raise ValueError('Model returned invalid confidence.')
             landmarks = result['landmarks']
             points = [[lm.x, lm.y, lm.z] for hand in (landmarks.multi_hand_landmarks if landmarks else []) for lm in hand.landmark]
-            return {'label': result['letter'], 'confidence': confidence, 'accepted': confidence >= threshold,
-                    'bbox': result['bbox'], 'landmarks': points, 'fallback': result['bbox'] is None,
+            hand_missing = self.profile['hand_crop']['enabled'] and result['bbox'] is None
+            return {'label': result['letter'], 'confidence': confidence, 'accepted': result['letter'] in self.profile['labels'] and confidence >= threshold,
+                    'bbox': result['bbox'], 'landmarks': points,
+                    'fallback': hand_missing and self.profile['hand_crop']['no_hand'] == 'full_frame',
+                    'skipped': result['letter'] is None, 'hand_missing': hand_missing,
+                    'profile_id': self.profile['id'],
                     'inference_ms': (time.perf_counter() - start) * 1000}
 
     def capture(self, body):
@@ -125,9 +200,16 @@ class SignService:
 
     def start_training(self, body):
         epochs, batch, rate = train_options(body)
+        if not original_training_supported(self.profile):
+            raise ValueError('Built-in training supports only the original 64x64 BGR A-Z contract. Use an external trainer for this model profile.')
+        if self.job['state'] == 'running':
+            raise ValueError('Training is already running.')
         with self.lock:
             if self.job['state'] == 'running':
                 raise ValueError('Training is already running.')
+            self.expire_lease()
+            if self.owner:
+                raise ResourceBusy('Stop active sign recognition before starting training.')
             # 5 per class guarantees enough test slots; decoded counts checked again.
             if any(count < 5 for count in self.stats().values()):
                 raise ValueError('Collect at least 5 valid samples for every letter A–Z before training. More diverse samples are strongly recommended.')
@@ -176,12 +258,9 @@ class SignService:
 
     def close(self):
         with self.lock:
+            self.owner = None
             if self.detector:
-                if self.detector.hands:
-                    self.detector.hands.close()
-                self.detector = None
                 try:
-                    import tensorflow as tf
-                    tf.keras.backend.clear_session()
-                except ImportError:
-                    pass
+                    self.detector.close()
+                finally:
+                    self.detector = None

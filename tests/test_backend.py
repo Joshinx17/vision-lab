@@ -70,7 +70,7 @@ class APITests(unittest.TestCase):
 
     def test_health_and_missing_model(self):
         self.assertEqual(self.request('/api/health')[0], 200)
-        status, body = self.request('/api/sign/load', '{}', {'Content-Type': 'application/json', 'X-Vision-Lab': '1'})
+        status, body = self.request('/api/sign/load', '{"session":"test-client"}', {'Content-Type': 'application/json', 'X-Vision-Lab': '1'})
         self.assertEqual(status, 400)
         self.assertIn('missing', body['error'])
 
@@ -82,6 +82,17 @@ class APITests(unittest.TestCase):
     def test_traversal_and_malformed_body(self):
         self.assertEqual(self.request('/%2e%2e/package.json')[0], 403)
         self.assertEqual(self.request('/api/sign/load', '[1]', {'Content-Type': 'application/json', 'X-Vision-Lab': '1'})[0], 400)
+
+    def test_resource_status_and_model_selection(self):
+        code, body = self.request('/api/resources')
+        self.assertEqual(code, 200)
+        self.assertIn('profiles', body)
+        headers = {'Content-Type': 'application/json', 'X-Vision-Lab': '1'}
+        code, body = self.request('/api/resources/select', '{"profile_id":"asl-candidate"}', headers)
+        self.assertEqual(code, 200)
+        self.assertEqual(body['profile']['id'], 'asl-candidate')
+        self.assertFalse(body['model_exists'])
+        self.request('/api/resources/select', '{"profile_id":"asl-original"}', headers)
 
 
 try:

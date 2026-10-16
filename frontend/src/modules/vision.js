@@ -1,14 +1,16 @@
 import { ExamRules } from './exam-rules.js';
+import { moduleResources } from '../core/resources.js';
 export class VisionXE {
   id = 'vision_xe';
   constructor(options) { this.options = options; this.rules = new ExamRules(); }
   async initialize() {
+    const resources = await moduleResources(this.id);
     this.faceapi = await import('face-api.js');
     const { nets } = this.faceapi;
     await Promise.all([
-      nets.tinyFaceDetector.loadFromUri('/models/tiny_face_detector'),
-      nets.faceLandmark68Net.loadFromUri('/models/face_landmark_68'),
-      nets.faceExpressionNet.loadFromUri('/models/face_expression'),
+      nets.tinyFaceDetector.loadFromUri(resources.models.tiny_face_detector),
+      nets.faceLandmark68Net.loadFromUri(resources.models.face_landmark_68),
+      nets.faceExpressionNet.loadFromUri(resources.models.face_expression),
     ]);
   }
   async process(frame) {

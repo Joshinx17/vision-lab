@@ -5,6 +5,7 @@ import { defaults, validateConfig } from './core/config.js';
 import { api } from './core/api.js';
 import { modules } from './modules/registry.js';
 import { COLORS, paint, erase } from './modules/air-logic.js';
+import ResourcePanel from './components/ResourcePanel.jsx';
 
 const EMOTIONS = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised'];
 
@@ -15,7 +16,7 @@ function History({ history, keys = EMOTIONS }) {
   </svg>;
 }
 
-function SignTools({ frame, cameraOnly, stop, runAction, setResult, threshold }) {
+function SignTools({ frame, cameraOnly, stop, runAction, setResult, threshold, resources }) {
   const [status, setStatus] = useState(null);
   const [letter, setLetter] = useState('A');
   const [epochs, setEpochs] = useState(20);
@@ -61,32 +62,36 @@ function SignTools({ frame, cameraOnly, stop, runAction, setResult, threshold })
       const image = await new Promise((resolve, reject) => {
         const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file);
       });
+      const session = crypto.randomUUID();
+      let acquired = false;
       try {
-        const result = await api('sign/predict', { image, threshold });
+        await api('sign/load', { session }); acquired = true;
+        const result = await api('sign/predict', { image, threshold, session });
         setPreview({ image, result });
         setResult({ ...result, module: 'sign_language', timestamp: Date.now() });
-      } finally { await api('sign/close', {}); }
+      } finally { if (acquired) await api('sign/close', { session }); }
     });
   };
   return <section className="panel tools">
     <h2>Sign language workbench</h2>
     <p>{status?.model_exists ? 'Model file found · validated when inference starts' : 'No trained model supplied. Capture samples or provide your existing model.'}</p>
     <label className="file">Predict an image<input type="file" accept="image/jpeg,image/png" onChange={upload} /></label>
-    {preview && <div><h3>Image prediction</h3><canvas ref={previewCanvas} style={{ width: '100%' }} /><p>{preview.result.fallback ? 'Full image fallback' : 'Hand crop'} · displayed at 160px; CNN input remains 64×64 BGR.</p><canvas ref={cropCanvas} /></div>}
+    {preview && <div><h3>Image prediction</h3><canvas ref={previewCanvas} style={{ width: '100%' }} /><p>{preview.result.fallback ? 'Full image fallback' : 'Model input region'} · preview at 160px; actual CNN input follows the selected model profile.</p><canvas ref={cropCanvas} /></div>}
     <details><summary>Capture a dataset</summary>
       <p>Saved frames contain mirrored camera pixels only, without overlays.</p>
       <button onClick={() => runAction(cameraOnly)}>Start capture camera</button>
       <label>Letter<select value={letter} onChange={e => setLetter(e.target.value)}>{Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map(l => <option key={l}>{l}</option>)}</select></label>
       <button onClick={() => runAction(async () => { await api('dataset/capture', { letter, image: snapshot() }); setStatus(await api('status')); })}>Save sample</button>
       <div className="dataset">{Object.entries(status?.dataset ?? {}).map(([key, count]) => <span key={key}>{key} <b>{count}</b></span>)}</div>
-      <img className="reference" src="/asl_reference.png" alt="Original ASL alphabet reference chart" />
+      {resources?.reference?.ready ? <img className="reference" src={resources.reference.url} alt="ASL alphabet reference chart" /> : <p>{resources?.reference?.issue || 'Reference chart not available.'}</p>}
     </details>
     <details><summary>Train the original CNN</summary>
       <p>Requires at least five valid images per letter. Existing model files are never overwritten. Validation accuracy is not a guarantee of real-world recognition.</p>
       <label>Epochs<input type="number" min="1" max="100" value={epochs} onChange={e => setEpochs(Number(e.target.value))} /></label>
       <label>Batch size<select value={batch} onChange={e => setBatch(Number(e.target.value))}>{[16, 32, 64, 128].map(v => <option key={v}>{v}</option>)}</select></label>
       <label>Learning rate<select value={rate} onChange={e => setRate(Number(e.target.value))}>{[.0001, .001, .01].map(v => <option key={v}>{v}</option>)}</select></label>
-      <button disabled={status?.training.state === 'running' || status?.model_exists} onClick={() => runAction(async () => { await stop(); await api('train', { epochs, batch_size: batch, learning_rate: rate }); setStatus(await api('status')); })}>Train new model</button>
+      {!status?.training_supported && <p className="warning">This profile uses a different model contract. The built-in A–Z trainer cannot train it; use a matching external trainer.</p>}
+      <button disabled={!status?.training_supported || status?.training.state === 'running' || status?.model_exists} onClick={() => runAction(async () => { await stop(); await api('train', { epochs, batch_size: batch, learning_rate: rate }); setStatus(await api('status')); })}>Train new model</button>
       <p aria-live="polite">Training: {status?.training.state ?? 'unknown'} {status?.training.epoch ? `· epoch ${status.training.epoch}/${status.training.epochs}` : ''}</p>
       {status?.training.error && <p role="alert">{status.training.error}</p>}
       <History history={status?.training.history ?? []} keys={['accuracy', 'val_accuracy']} />
@@ -106,6 +111,17 @@ export default function App() {
   const [devices, setDevices] = useState([]);
   const [busy, setBusy] = useState(false), [running, setRunning] = useState(false), [pointerMode, setPointerMode] = useState(false);
   const [phase, setPhase] = useState('');
+  const [resources, setResources] = useState(null), [resourceError, setResourceError] = useState('');
+  const [resourceVersion, setResourceVersion] = useState(0);
+  const refreshResources = async () => {
+    try { setResources(await api('resources')); setResourceError(''); }
+    catch (err) { setResourceError('Resource service unavailable: ' + err.message + '. Check that npm start is running.'); }
+  };
+  useEffect(() => {
+    let active = true;
+    api('resources').then(value => { if (active) setResources(value); }).catch(err => { if (active) setResourceError(err.message); });
+    return () => { active = false; };
+  }, []);
   const [error, setError] = useState(''), [result, setResult] = useState(null), [history, setHistory] = useState([]);
   const [settings, setSettings] = useState(options.current), [grid, setGrid] = useState(false);
   const change = patch => { options.current = { ...options.current, ...patch }; setSettings(options.current); };
@@ -140,7 +156,8 @@ export default function App() {
   const start = async () => {
     await stop(); setResult(null); setHistory([]);
     await pipeline.current.start(selected.create(options), validateConfig(config)); setRunning(true);
-    setDevices((await navigator.mediaDevices.enumerateDevices()).filter(device => device.kind === 'videoinput'));
+    try { setDevices((await navigator.mediaDevices.enumerateDevices()).filter(device => device.kind === 'videoinput')); }
+    catch (err) { console.warn('Optional camera device list unavailable', err); }
   };
   const cameraOnly = async () => {
     await stop();
@@ -194,9 +211,12 @@ export default function App() {
         <div className="metrics"><span><b>{result?.fps?.toFixed(1) ?? '—'}</b> processed FPS</span><span><b>{result?.processing_ms?.toFixed(0) ?? '—'}</b> ms / frame</span><span><b>{result?.inference_ms?.toFixed(0) ?? '—'}</b> ms sign inference</span></div>
         {selected.id === 'air_write' && <section className="panel"><h2>Drawing tools</h2><p>Index finger: draw · two fingers: erase · pinch: pause</p><div className="swatches">{COLORS.map((color, index) => <button key={color} aria-label={`Color ${index + 1}`} aria-pressed={settings.color === color} style={{ background: color }} onClick={() => change({ color, eraser: false })} />)}</div><label>Brush {settings.size}px<input type="range" min="2" max="30" value={settings.size} onChange={e => change({ size: Number(e.target.value) })} /></label><button aria-pressed={settings.eraser} onClick={() => change({ eraser: !settings.eraser })}>Eraser (E)</button><button onClick={clear}>Clear (C)</button><button aria-pressed={grid} onClick={() => setGrid(!grid)}>Grid (G)</button><p>{result?.gesture ?? 'Awaiting input'} · keys 1–7 change color</p></section>}
         {selected.id === 'vision_xe' && <section className="panel"><h2>Live analytics <span>{result?.dominant ?? 'No face'}</span></h2>{EMOTIONS.map((emotion, index) => <div className="expression" key={emotion}><span style={{ color: COLORS[index] }}>{emotion}</span><progress max="1" value={result?.expressions?.[emotion] ?? 0} /><b>{((result?.expressions?.[emotion] ?? 0) * 100).toFixed(1)}%</b></div>)}<History history={history} /><small>Last 40 processed samples. Expression scores are model outputs, not evidence of a person's intent.</small><label><input type="checkbox" checked={settings.exam} onChange={e => change({ exam: e.target.checked })} /> Examination demonstration</label><label><input type="checkbox" checked={settings.sound} onChange={e => change({ sound: e.target.checked })} /> Warning sounds</label>{settings.exam && <p>Original rules: absence over 3s, multiple faces, head offset &gt;0.35, selected expression scores &gt;0.4. Three warnings end this demo; 5s cooldown. Not suitable for judging cheating.</p>}{result?.warnings?.map((warning, index) => <p className="warning" key={warning.timestamp}>Warning {index + 1}/3 · {warning.reason}</p>)}</section>}
-        {selected.id === 'sign_language' && <SignTools frame={frame} cameraOnly={cameraOnly} stop={stop} runAction={runAction} setResult={setResult} threshold={config.confidence} />}
+        {selected.id === 'sign_language' && <SignTools key={resourceVersion} frame={frame} cameraOnly={cameraOnly} stop={stop} runAction={runAction} setResult={setResult} threshold={config.confidence} resources={resources} />}
         </div>
         <div className="secondary"><section className="panel"><h2>Session settings</h2><label>Camera<select disabled={running} value={config.deviceId} onChange={e => setConfig({ ...config, deviceId: e.target.value })}><option value="">Default camera</option>{devices.map((device, index) => <option key={device.deviceId} value={device.deviceId}>{device.label || `Camera ${index + 1}`}</option>)}</select></label><label>Resolution<select disabled={running} value={`${config.width}x${config.height}`} onChange={e => { const [width, height] = e.target.value.split('x').map(Number); setConfig({ ...config, width, height }); }}><option>640x480</option><option>1280x720</option><option>1920x1080</option></select></label><label>Target FPS<input disabled={running} type="number" min="1" max="60" value={config.fps} onChange={e => setConfig({ ...config, fps: Number(e.target.value) })} /></label><label>Sign confidence threshold<input disabled={running} type="number" min="0" max="1" step=".05" value={config.confidence} onChange={e => setConfig({ ...config, confidence: Number(e.target.value) })} /></label><small>Actual throughput depends on inference time. Changes apply on next start.</small></section>
+        <ResourcePanel resources={resources} error={resourceError} moduleId={selected.id} refresh={() => runAction(refreshResources)} selectProfile={id => runAction(async () => {
+          await stop(); await api('resources/select', { profile_id: id }); setResult(null); setHistory([]); setResourceVersion(value => value + 1); await refreshResources();
+        })} />
         <section className="panel"><h2>Latest result</h2>{result?.label && <div className="prediction"><b>{result.label}</b><span>{(result.confidence * 100).toFixed(1)}% confidence</span>{!result.accepted && <p>Below confidence threshold</p>}{result.fallback && <p className="warning">No hand crop: classifying the full frame.</p>}</div>}<pre>{result ? JSON.stringify(result, (key, value) => ['segment', 'landmarks', 'detections'].includes(key) ? undefined : value, 2) : 'No frames processed yet.'}</pre></section>
         </div>
       </fieldset><footer>VISION-LAB / LOCAL WORKSPACE <span>One camera · three capabilities</span></footer>

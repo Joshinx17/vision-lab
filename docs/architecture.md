@@ -83,3 +83,22 @@ Only trusted local model files should be used; model upload is not an API.
 
 This is a single-user local tool, not an internet-facing service. No cloud,
 accounts, database, production web server, or authentication system is added.
+
+## Resource catalog and adapter boundary
+
+config/resources.json now defines sign-model profiles, labels/preprocessing,
+face model URLs, MediaPipe asset base/options and the optional chart. Resources
+are checked without importing native ML packages. Missing/invalid resources
+are returned to the website; absent trained weights are kept absent.
+backend/model_adapters.py provides explicit trusted factories. The implemented
+keras_image adapter accepts configured image dimensions, BGR/RGB, affine
+normalization, labels and crop/no-hand behavior. Only original-contract profiles
+can use the existing trainer. Other runtimes need registered adapter code.
+
+The website exposes diagnostics, selection and apply/reload actions. Profile
+switching validates configuration before closing old resources. Sign inference
+uses browser session ownership: other tabs cannot unload or replace its model,
+and an abandoned lease can be reclaimed after 60 seconds without predictions.
+Simultaneous stop/restart awaits a shared asynchronous teardown before opening
+the next module. Profile selection is process-local; startup choice is stored
+in the editable catalog. Public hosting remains outside the current runtime.

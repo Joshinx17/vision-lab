@@ -64,15 +64,22 @@ export class Pipeline {
     this.generation++;
     this.cancel(this.handle);
     this.camera.stop();
-    await this.pending.catch(() => {});
-    const module = this.module;
-    this.module = null;
-    try { await module?.dispose?.(); }
-    finally {
-      if (module) console.info('Disposed module', module.id);
-      this.onStatus('');
-      this.lastTime = undefined;
-      this.overlay.getContext('2d').clearRect(0, 0, this.overlay.width, this.overlay.height);
+    if (!this.teardown) {
+      this.teardown = (async () => {
+        await this.pending.catch(() => {});
+        const module = this.module;
+        this.module = null;
+        try { await module?.dispose?.(); }
+        finally {
+          if (module) console.info('Disposed module', module.id);
+          this.onStatus('');
+          this.lastTime = undefined;
+          this.overlay.getContext('2d').clearRect(0, 0, this.overlay.width, this.overlay.height);
+        }
+      })();
     }
+    const teardown = this.teardown;
+    try { await teardown; }
+    finally { if (this.teardown === teardown) this.teardown = null; }
   }
 }

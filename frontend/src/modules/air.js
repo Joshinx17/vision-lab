@@ -1,10 +1,14 @@
 import { gesture, Stroke, paint, erase } from './air-logic.js';
+import { moduleResources } from '../core/resources.js';
 let scriptReady;
-function loadHands() {
+let loadedBase;
+function loadHands(base) {
+  if (loadedBase && loadedBase !== base) throw new Error('Hand runtime path changed. Reload this webpage to activate the replacement assets.');
   if (window.Hands) return Promise.resolve();
   if (!scriptReady) scriptReady = new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = '/mediapipe/hands.js';
+    loadedBase = base;
+    script.src = base + '/hands.js';
     script.onload = resolve;
     script.onerror = () => { script.remove(); scriptReady = null; reject(new Error('Hand tracking assets missing. Run npm run build.')); };
     document.head.appendChild(script);
@@ -16,9 +20,10 @@ export class AirWrite {
   constructor(options) { this.options = options; this.stroke = new Stroke(); }
   async initialize({ canvas }) {
     this.canvas = canvas;
-    await loadHands();
-    this.hands = new window.Hands({ locateFile: file => `/mediapipe/${file}` });
-    this.hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: .7, minTrackingConfidence: .6 });
+    const resources = await moduleResources(this.id);
+    await loadHands(resources.asset_base);
+    this.hands = new window.Hands({ locateFile: file => resources.asset_base + '/' + file });
+    this.hands.setOptions(resources.options);
     this.hands.onResults(results => { this.landmarks = results.multiHandLandmarks?.[0]; });
     await this.hands.initialize();
   }
